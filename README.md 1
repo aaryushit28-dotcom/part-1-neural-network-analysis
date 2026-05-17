@@ -1,0 +1,105 @@
+# Part 1: Neural Network Fundamentals and Training Behavior Analysis
+
+## Problem Statement
+Build and analyze a feed-forward neural network to predict customer churn, demonstrating forward pass, loss calculation, backpropagation, and parameter updates.
+
+## Dataset: `customer_churn_nn.csv`
+| Property | Detail |
+|---|---|
+| Rows | 2000 |
+| Features | 15 (after dropping customer_id) |
+| Target | `churn` — Binary (0 = Retained, 1 = Churned) |
+| Churn Rate | ~1.55% (severely imbalanced) |
+| Missing Values | None |
+| Categorical Cols | region, plan_type, contract_type, payment_method |
+| Numerical Cols | tenure_months, monthly_charges_inr, avg_login_days_per_month, support_tickets, payment_delay_days, data_usage_gb, satisfaction_score, last_complaint_days_ago, discount_percent, autopay_enabled, referral_count |
+
+---
+
+## Repository Structure
+```
+part-1-neural-network-analysis/
+├── README.md
+├── notebook.ipynb
+├── requirements.txt
+└── results/
+    ├── eda_exploration.png
+    ├── baseline_training_curves.png
+    ├── confusion_matrix_baseline.png
+    ├── model_comparison_chart.png
+    ├── model_comparison_table.png
+    └── model_comparison_table.csv
+```
+
+---
+
+## Tasks Completed
+
+### Task 1: Dataset Understanding
+- 2000 rows × 17 columns
+- Mixed features: 4 categorical + 11 numerical + 1 ID + 1 target
+- No missing values
+- Highly imbalanced target: 98.45% retained, 1.55% churned
+
+### Task 2: Data Preprocessing
+- Dropped `customer_id` (non-predictive identifier)
+- Label-encoded categorical columns
+- StandardScaler applied to all numerical features
+- 80/20 stratified train-test split
+
+### Task 3: Model Architecture
+```
+Input (15 features)
+  → Dense(64, ReLU) → Dropout(0.2)
+  → Dense(32, ReLU) → Dropout(0.2)
+  → Dense(1, Sigmoid)
+Loss: Binary Cross-Entropy
+Optimizer: Adam (lr=0.001)
+```
+Class weights applied to handle imbalance: {0: 1.0, 1: 63.0}
+
+### Task 4: Baseline Results
+| Metric | Value |
+|---|---|
+| Train Accuracy | ~96.5% |
+| Test Accuracy | ~94.3% |
+| ROC-AUC | ~0.88 |
+
+### Task 5: Hyperparameter Experiments
+
+| Experiment | Hidden Layers | Activation | LR | Batch | Epochs | Test Acc | AUC | F1 (Churn) |
+|---|---|---|---|---|---|---|---|---|
+| Exp 1 – Baseline | [64, 32] | relu | 0.001 | 32 | 60 | 0.9350 | 0.8832 | 0.1333 |
+| Exp 2 – Deeper | [128, 64, 32] | relu | 0.001 | 32 | 60 | 0.9500 | 0.8173 | 0.0909 |
+| Exp 3 – High LR | [64, 32] | relu | 0.01 | 32 | 60 | 0.9225 | 0.8092 | 0.0606 |
+| Exp 4 – Low LR | [64, 32] | relu | 0.0001 | 32 | 60 | 0.7650 | 0.9150 | 0.0962 |
+| Exp 5 – tanh | [64, 32] | tanh | 0.001 | 32 | 60 | 0.8525 | 0.8892 | 0.1194 |
+| Exp 6 – Large Batch | [64, 32] | relu | 0.001 | 128 | 60 | 0.9125 | 0.7750 | 0.1463 |
+| Exp 7 – Wide+Long | [256, 128] | relu | 0.001 | 32 | 80 | 0.9650 | 0.7018 | 0.1250 |
+
+**Key Finding:** Baseline (Exp 1) offers the best balance of AUC and accuracy. High LR (Exp 3) destabilizes training. Low LR (Exp 4) achieves highest AUC despite slow convergence. Exp 7 overfits (train 0.994 vs test 0.965).
+
+---
+
+### Task 6: Final Reflection
+
+**Weights and Biases:** Weights define connection strengths between neurons; biases allow neurons to activate independent of input. Both are updated via gradient descent during backpropagation.
+
+**Activation Functions:** Non-linear activations (like ReLU) allow the network to learn complex patterns. Without them, deep networks collapse into a single linear transformation.
+
+**Learning Rate Effects:**
+- Too high → overshoots loss minimum → unstable, diverging training
+- Too low → extremely slow convergence → underfitting within fixed epochs
+
+**Overfitting / Underfitting:**
+- Exp 7 (Wide + More Epochs): overfitting — large train/test accuracy gap
+- Exp 4 (Low LR): underfitting — both accuracies are low
+- Baseline (Exp 1): well-balanced — Dropout layers provided effective regularization
+
+---
+
+## How to Run
+```bash
+pip install -r requirements.txt
+jupyter notebook notebook.ipynb
+```
